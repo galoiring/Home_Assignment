@@ -3,7 +3,8 @@ from .views import WriteMessageView, UserMessagesView, UnreadUserMessagesView, R
 
 urlpatterns = [
     path('api/write/', WriteMessageView.as_view(), name='api-write-message'),
-    path('<str:username>/', UserMessagesView.as_view(), name='user-messages'),
+    # path('<str:username>/', UserMessagesView.as_view(), name='user-messages'),
+    path('messages/', UserMessagesView.as_view(), name='user-messages'),
     path('<str:username>/unread/',
          UnreadUserMessagesView.as_view(), name='unread-messages'),
     path('<str:username>/read/', ReadMessageView.as_view(), name='read-message'),

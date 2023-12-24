@@ -23,11 +23,16 @@ class WriteMessageView(APIView):
 
 
 class UserMessagesView(APIView):
-    def get(self, request, username):
-        user = get_object_or_404(User, username=username)
+    def get(self, request):
+        # user = get_object_or_404(User, username=username)
+        user = request.user
+        print(f"Request user: {request.user}")
+
         messages = Message.objects.filter(receiver=user)
         response = {'messages': [{'sender': message.sender.username,
+                                  'reciver': message.receiver.username,
                                   'subject': message.subject, 'message': message.message,
+                                  'message_id': message.message_id,
                                   'is_read': message.is_read,
                                   } for message in messages]}
         return JsonResponse(response)
@@ -39,6 +44,7 @@ class UnreadUserMessagesView(UserMessagesView):
         messages = Message.objects.filter(receiver=user, is_read=False)
         response = {'messages': [{'sender': message.sender.username,
                                   'subject': message.subject, 'message': message.message,
+                                  'message_id': message.message_id,
                                   'is_read': message.is_read,
                                   } for message in messages]}
         return JsonResponse(response)
@@ -58,6 +64,7 @@ class ReadMessageView(APIView):
             last_unread_message.save()
 
             response = {'message': {'sender': last_unread_message.sender.username,
+
                                     'subject': last_unread_message.subject,
                                     'message': last_unread_message.message,
                                     'is_read': last_unread_message.is_read,
@@ -69,16 +76,16 @@ class ReadMessageView(APIView):
 
 
 class DeleteMessageView(APIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+    def delete(self, request, message_id, *args, **kwargs):
+        message = get_object_or_404(Message, message_id=message_id)
 
-    def delete(self, request, message_id):
-        message = get_object_or_404(Message, id=message_id)
+        print(f"Request user: {request.user}")
+        print(f"Message sender: {message.sender}")
+        print(f"Message receiver: {message.receiver}")
 
-        # Check if the user is the sender or receiver of the message
+        # Check if the user is the sender or receiver before deleting
         if request.user == message.sender or request.user == message.receiver:
             message.delete()
-            return Response({'status': 'success'}, status=status.HTTP_200_OK)
+            return Response({'status': 'success'}, status=status.HTTP_204_NO_CONTENT)
         else:
-            return Response({'detail': 'You do not have permission to delete this message.'},
-                            status=status.HTTP_403_FORBIDDEN)
+            return Response({'status': 'error', 'detail': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
