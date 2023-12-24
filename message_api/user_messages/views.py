@@ -23,9 +23,16 @@ class WriteMessageView(APIView):
 
 
 class UserMessagesView(APIView):
-    def get(self, request, username):
+    def get(self, request, username, unread=False):
         user = get_object_or_404(User, username=username)
-        messages = Message.objects.filter(receiver=user)
-        data = {'messages': [{'sender': message.sender.username,
-                              'subject': message.subject, 'message': message.message} for message in messages]}
-        return JsonResponse(data)
+
+        if unread:
+            messages = Message.objects.filter(receiver=user, is_read=False)
+        else:
+            messages = Message.objects.filter(receiver=user)
+
+        response = {'messages': [{'sender': message.sender.username,
+                                  'subject': message.subject, 'message': message.message,                     'is_read': message.is_read,
+                                  } for message in messages]}
+
+        return JsonResponse(response)
