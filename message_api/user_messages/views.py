@@ -7,7 +7,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from .models import Message
 from .serializers import MessageSerializer
-from django.http import JsonResponse, Http404
+from django.http import JsonResponse
 
 
 class WriteMessageView(APIView):
@@ -19,19 +19,21 @@ class WriteMessageView(APIView):
         if serializer.is_valid():
             serializer.save(sender=request.user)
             return Response({'status': 'success'}, status=status.HTTP_201_CREATED)
-        return Response({'status': 'error', 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'status': 'error',
+                         'errors': serializer.errors},
+                        status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserMessagesView(APIView):
     def get(self, request):
         # user = get_object_or_404(User, username=username)
         user = request.user
-        print(f"Request user: {request.user}")
 
         messages = Message.objects.filter(receiver=user)
         response = {'messages': [{'sender': message.sender.username,
                                   'reciver': message.receiver.username,
-                                  'subject': message.subject, 'message': message.message,
+                                  'subject': message.subject,
+                                  'message': message.message,
                                   'message_id': message.message_id,
                                   'is_read': message.is_read,
                                   } for message in messages]}
@@ -43,7 +45,8 @@ class UnreadUserMessagesView(UserMessagesView):
         user = get_object_or_404(User, username=username)
         messages = Message.objects.filter(receiver=user, is_read=False)
         response = {'messages': [{'sender': message.sender.username,
-                                  'subject': message.subject, 'message': message.message,
+                                  'subject': message.subject,
+                                  'message': message.message,
                                   'message_id': message.message_id,
                                   'is_read': message.is_read,
                                   } for message in messages]}
@@ -64,7 +67,7 @@ class ReadMessageView(APIView):
             last_unread_message.save()
 
             response = {'message': {'sender': last_unread_message.sender.username,
-
+                                    'reciver': last_unread_message.receiver.username,
                                     'subject': last_unread_message.subject,
                                     'message': last_unread_message.message,
                                     'is_read': last_unread_message.is_read,
