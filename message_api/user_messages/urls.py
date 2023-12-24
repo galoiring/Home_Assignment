@@ -10,7 +10,4 @@ urlpatterns = [
     path('<str:username>/read/', ReadMessageView.as_view(), name='read-message'),
     path('api/delete/<int:message_id>/',
          DeleteMessageView.as_view(), name='api-delete-message'),
-
-
-
 ]
