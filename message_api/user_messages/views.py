@@ -27,9 +27,14 @@ class WriteMessageView(APIView):
 class UserMessagesView(APIView):
     def get(self, request):
         # user = get_object_or_404(User, username=username)
-        user = request.user
+        if request.user.is_anonymous:
+            default_user, created = User.objects.get_or_create(
+                username='gal')
+            request.user = default_user
 
+        user = request.user
         messages = Message.objects.filter(receiver=user)
+
         response = {'messages': [{'sender': message.sender.username,
                                   'reciver': message.receiver.username,
                                   'subject': message.subject,
@@ -44,6 +49,7 @@ class UnreadUserMessagesView(UserMessagesView):
     def get(self, request, username):
         user = get_object_or_404(User, username=username)
         messages = Message.objects.filter(receiver=user, is_read=False)
+
         response = {'messages': [{'sender': message.sender.username,
                                   'subject': message.subject,
                                   'message': message.message,
@@ -82,11 +88,6 @@ class DeleteMessageView(APIView):
     def delete(self, request, message_id, *args, **kwargs):
         message = get_object_or_404(Message, message_id=message_id)
 
-        print(f"Request user: {request.user}")
-        print(f"Message sender: {message.sender}")
-        print(f"Message receiver: {message.receiver}")
-
-        # Check if the user is the sender or receiver before deleting
         if request.user == message.sender or request.user == message.receiver:
             message.delete()
             return Response({'status': 'success'}, status=status.HTTP_204_NO_CONTENT)
